@@ -1,21 +1,33 @@
+###############################################################################
+# Filename: GanttGrapher.py
+# First written: 08-20-2016
+# Author: Samuel Miller
+#
+# Description: This is a simple program that uses Plotly software to make a 
+# Gantt chart for repeated tasks, taking the schedule data from a .csv file.
+###############################################################################
 import sys
 import csv
 import plotly.plotly as py
 import plotly.graph_objs as go
 from datetime import datetime
 
-# Get columns from CSV file
+# Takes name of file in working directory and the desired column as 
+# arguments and returns a list of the values from that column of that file
 def getColumn(filename, column):
     results = csv.reader(open(filename), delimiter=",")
     return [result[column] for result in results]
-	
-# Get time in seconds after 2016-03-29 00:00:00 from date string
+
+# Takes the input time string as argument and returns the time in seconds
+# since Jan. 1, 1970
 def getTime(inputDate):
 	inputTime = datetime.strptime(inputDate, "%Y-%m-%d %H:%M:%S")
 	baseTime = datetime(1970, 1, 1)
 	return (inputTime - baseTime).total_seconds()
 
-# Return the color of the corresponding bar segment
+# Takes the index of the tasks, the list of lengths of each bar for that task,
+# and the index of the current bar as arguments and returns the color of that 
+# bar segment as a string
 def getColor(taskNum, barVals, barValIndex):
 	if barValIndex > len(barVals) - 1:
 		return 'rgba(255, 255, 255, 0)'
@@ -31,16 +43,20 @@ def getColor(taskNum, barVals, barValIndex):
 		return 'rgba(0, 0, 255, 1)'
 	else:
 		return 'rgba(0, 255, 255, 1)'
-	
-# Return the length of bar segment or 0 if no more bar segments
+
+# Takes the list of lengths of each bar for a given task and the index of the
+# current bar as arguments and returns the size of that bar (or 0 if past last 
+# bar in list)
 def getBarSize(barVals, barValIndex):
 	if barValIndex > len(barVals) - 1:
 		return 0
 	else:
 		return barVals[barValIndex][0]
 
-# Return 2D list to hold row indices from CSV corresponding to a given task 
-# for all specified tasks
+# Takes the list of tasks, the list of events, the list of start times for each
+# event, the list of stop times for each event, the overall start time and the 
+# overall end time as arguments and returns the list of row indices 
+# corresponding to a given task for all specified tasks
 def getTaskIndices(tasks, eventTasks, starts, stops, startTime, endTime):
 	taskIndices = []
 	for task in tasks:
@@ -55,9 +71,9 @@ def getTaskIndices(tasks, eventTasks, starts, stops, startTime, endTime):
 	
 	return taskIndices
 
-# Return list of barValues for each task from taskIndices, start times of all
-# repeated tasks, stop times of all repeated tasks, startTime for graph, and
-# stopTime for graph
+# Takes the list of row indices corresponding to different tasks, list of start
+# times, list of stop times, overall start time and overall stop time as 
+# arguments and returns the list of bar lengths for each task
 def getBarVals(taskIndices, starts, stops, startTime, endTime):
 	eventStarts = []
 	eventStops = []
@@ -96,7 +112,8 @@ def getBarVals(taskIndices, starts, stops, startTime, endTime):
 				barVals[i].append([eventStops[i][iteration] - eventStarts[i][iteration], 'color'])
 	return barVals
 
-# Builds data object from the task names and the sizes of each bar for each task
+# Takes the list of task and list of bar lengths for each task as arguments and
+# returns the data object for the graph
 def dataBuilder(tasks, barVals):
 	data = []
 	maxBars = 0
@@ -121,8 +138,8 @@ def dataBuilder(tasks, barVals):
 		))
 	return data
 
-# Return the pseudo-Gantt Chart from the data, task name list, 
-# and startDate string
+# Takes the data object for the graph, the list of tasks, and the overall start
+# time of the graph as arguments and returns the figure object (AKA the graph)
 def figureBuilder(data, tasks, startDate):
 	# Figure out the tile for the graph
 	if len(tasks) == 1:
@@ -163,7 +180,8 @@ def figureBuilder(data, tasks, startDate):
 	return go.Figure(data = data, layout = layout)
 	
 # Main method takes CSV file name, desired graph name, task names, as well as 
-# start and end dates as command line arguments
+# start and end dates as command line arguments and constructs a Gantt chart
+# and pushes the result to Plotly
 def main(argv):
 	# Make sure there are between 1 and 5 tasks (and other necessary arguments)
 	if len(argv) < 6:
@@ -204,6 +222,7 @@ def main(argv):
 	data = dataBuilder(tasks, barVals)
 	figure = figureBuilder(data, tasks, startDate)
 	py.plot(figure, inputFile = graphName)
-
+	
+# Make sure main function is hit
 if __name__ == "__main__":
 	main(sys.argv)
